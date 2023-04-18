@@ -11,11 +11,12 @@ predict_interactions(
   verbose = FALSE,
   models = 10,
   cv_folds = 10,
-  trees = 500
+  trees = 500,
+  negative_ratio = NA
 )
 }
 \arguments{
-\item{features}{a data frame with proteins in the first two columns, and 
+\item{features}{a data frame with proteins in the first two columns, and
 features to be passed to the classifier in the remaining columns}
 
 \item{gold_standard}{an adjacency matrix of "gold standard" interactions
@@ -35,15 +36,18 @@ with a different k-fold cross-validation split}
 \item{cv_folds}{the number of folds to use for k-fold cross-validation}
 
 \item{trees}{for random forests only, the number of trees in the forest}
+
+\item{negative_ratio}{let the ratio of positive:negative labels be 1:n.
+This changes n. default is NA, which do not change the ratio of negatives.}
 }
 \value{
-a ranked data frame of pairwise interactions, with the 
+a ranked data frame of pairwise interactions, with the
 classifier score, label, and cumulative precision for each interaction
 }
 \description{
 Discriminate interacting from non-interacting protein pairs by training a
-machine learning model on a set of labelled examples, given a set of 
-features derived from a co-elution profile matrix (see 
+machine learning model on a set of labelled examples, given a set of
+features derived from a co-elution profile matrix (see
 \code{\link[PrInCE]{calculate_features}}.
 }
 \details{
@@ -57,9 +61,9 @@ a classifier score, whereas for the remaining protein pairs, the median of
 all ten folds is used. Furthermore, to ensure the results are not sensitive
 to the precise classifier split used, an ensemble of multiple classifiers
 (ten, by default) is trained, and the classifier score is subsequently
-averaged across classifiers. 
+averaged across classifiers.
 
-PrInCE can also ensemble across multiple different types of classifiers, 
+PrInCE can also ensemble across multiple different types of classifiers,
 by supplying the \code{"ensemble"} option to the \code{classifier} argument.
 }
 \examples{

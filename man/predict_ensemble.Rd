@@ -11,44 +11,48 @@ predict_ensemble(
   models = 1,
   cv_folds = 10,
   trees = 500,
-  node_columns = c(1, 2)
+  node_columns = c(1, 2),
+  negative_ratio = NA
 )
 }
 \arguments{
 \item{dat}{a data frame containing interacting gene/protein pairs in the
-first two columns, and the features to use for classification in the 
+first two columns, and the features to use for classification in the
 remaining columns}
 
 \item{labels}{labels for each interaction in \code{dat}: 0 for negatives,
 1 for positives, and NA for interactions outside the reference set}
 
-\item{classifier}{the type of classifier to use; one of \code{"NB"} 
+\item{classifier}{the type of classifier to use; one of \code{"NB"}
 (naive Bayes), \code{"SVM"} (support vector machine), \code{"RF"}
 (random forest), or \code{"LR"} (logistic regression)}
 
 \item{models}{the number of classifiers to train}
 
-\item{cv_folds}{the number of folds to split the reference dataset into 
-when training each classifier. By default, each 
+\item{cv_folds}{the number of folds to split the reference dataset into
+when training each classifier. By default, each
 classifier uses ten-fold cross-validation, i.e., the classifier is trained
 on 90\% of the dataset and used to classify the remaining 10\%}
 
-\item{trees}{for random forest classifiers only, the number of trees to 
+\item{trees}{for random forest classifiers only, the number of trees to
 grow for each fold}
 
-\item{node_columns}{a vector of length two, denoting either the indices 
-(integer vector) or column names (character vector) of the columns within 
-the input data frame containing the nodes participating in pairwise 
-interactions; defaults to the first two columns of the data frame 
+\item{node_columns}{a vector of length two, denoting either the indices
+(integer vector) or column names (character vector) of the columns within
+the input data frame containing the nodes participating in pairwise
+interactions; defaults to the first two columns of the data frame
 (\code{c(1, 2)})}
+
+\item{negative_ratio}{let the ratio of positive:negative labels be 1:n.
+This changes n. default is NA, which do not change the ratio of negatives.}
 }
 \value{
-the input data frame of pairwise interactions, ranked by the 
+the input data frame of pairwise interactions, ranked by the
 median of classifier scores across all ensembled models
 }
 \description{
 Use an ensemble of classifiers to predict interactions from
-co-elution dataset features. The ensemble approach ensures that 
+co-elution dataset features. The ensemble approach ensures that
 results are robust to the partitioning of the dataset into folds. For each
 model, the median of classifier scores across all folds is calculated.
 Then, the median of all such medians across all models is calculated.
@@ -65,7 +69,7 @@ data(gold_standard)
 ref <- adjacency_matrix_from_list(gold_standard)
 labels <- make_labels(ref, features)
 ## predict interactions with naive Bayes classifier
-ppi <- predict_ensemble(features, labels, classifier = "NB", 
+ppi <- predict_ensemble(features, labels, classifier = "NB",
                         cv_folds = 3, models = 1)
 
 }

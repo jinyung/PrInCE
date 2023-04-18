@@ -1,10 +1,10 @@
 #' Predict interactions given a set of features and examples
-#' 
+#'
 #' Discriminate interacting from non-interacting protein pairs by training a
-#' machine learning model on a set of labelled examples, given a set of 
-#' features derived from a co-elution profile matrix (see 
-#' \code{\link[PrInCE]{calculate_features}}. 
-#' 
+#' machine learning model on a set of labelled examples, given a set of
+#' features derived from a co-elution profile matrix (see
+#' \code{\link[PrInCE]{calculate_features}}.
+#'
 #' PrInCE implements four different classifiers (naive Bayes, support vector
 #' machine, random forest, and logistic regression). Naive Bayes is used as a
 #' default. The classifiers are trained
@@ -15,15 +15,15 @@
 #' all ten folds is used. Furthermore, to ensure the results are not sensitive
 #' to the precise classifier split used, an ensemble of multiple classifiers
 #' (ten, by default) is trained, and the classifier score is subsequently
-#' averaged across classifiers. 
-#' 
-#' PrInCE can also ensemble across multiple different types of classifiers, 
-#' by supplying the \code{"ensemble"} option to the \code{classifier} argument. 
-#' 
-#' @param features a data frame with proteins in the first two columns, and 
+#' averaged across classifiers.
+#'
+#' PrInCE can also ensemble across multiple different types of classifiers,
+#' by supplying the \code{"ensemble"} option to the \code{classifier} argument.
+#'
+#' @param features a data frame with proteins in the first two columns, and
 #'   features to be passed to the classifier in the remaining columns
 #' @param gold_standard an adjacency matrix of "gold standard" interactions
-#'  used to train the classifier 
+#'  used to train the classifier
 #' @param classifier the type of classifier to use: one of \code{"NB"} (naive
 #'   Bayes), \code{"SVM"} (support vector machine), \code{"RF"} (random forest),
 #'   \code{"LR"} (logistic regression), or \code{"ensemble"} (an ensemble of
@@ -34,11 +34,13 @@
 #'   with a different k-fold cross-validation split
 #' @param cv_folds the number of folds to use for k-fold cross-validation
 #' @param trees for random forests only, the number of trees in the forest
-#' 
-#' @return a ranked data frame of pairwise interactions, with the 
-#' classifier score, label, and cumulative precision for each interaction 
-#' 
-#' @examples 
+#' @param negative_ratio let the ratio of positive:negative labels be 1:n.
+#'   This changes n. default is NA, which do not change the ratio of negatives.
+#'
+#' @return a ranked data frame of pairwise interactions, with the
+#' classifier score, label, and cumulative precision for each interaction
+#'
+#' @examples
 #' ## calculate features
 #' data(scott)
 #' data(scott_gaussians)
@@ -50,60 +52,61 @@
 #' ref <- adjacency_matrix_from_list(gold_standard)
 #' ## predict interactions
 #' ppi <- predict_interactions(features, ref, cv_folds = 3, models = 1)
-#' 
+#'
 #' @importFrom dplyr starts_with group_by mutate_if mutate ungroup arrange
 #'   full_join select
 #' @importFrom magrittr %>%
-#' 
+#'
 #' @export
 predict_interactions <- function(
   features, gold_standard, classifier = c("NB", "SVM", "RF", "LR", "ensemble"),
-  verbose = FALSE, models = 10, cv_folds = 10, trees = 500) {
+  verbose = FALSE, models = 10, cv_folds = 10, trees = 500, negative_ratio = NA) {
   classifier <- match.arg(classifier)
-  
+
   ## define global variables to prevent check complaining
   protein_A <- NULL; protein_B <- NULL; score.x <- NULL; score.y <- NULL;
   score.x.x <- NULL; score.y.y <- NULL
-  
+
   # make labels
   if (verbose) {
     message("making labels ...")
   }
   labels <- make_labels(gold_standard, features)
-  
+
   if (classifier %in% c("NB", "SVM", "RF", "LR")) {
     if (verbose) {
       message("training classifiers ...")
     }
     # predict with a classifier ensemble
-    interactions = predict_ensemble(features, 
-                                    labels, 
-                                    classifier = classifier, 
-                                    models = models, 
-                                    cv_folds = cv_folds, 
-                                    trees = trees)
+    interactions = predict_ensemble(features,
+                                    labels,
+                                    classifier = classifier,
+                                    models = models,
+                                    cv_folds = cv_folds,
+                                    trees = trees,
+                                    negative_ratio = negative_ratio)
   } else if (classifier == "ensemble") {
-    # predict all four separately 
+    # predict all four separately
     if (verbose) {
       message("training naive Bayes classifiers ...")
     }
     interactions_NB <- predict_ensemble(
-      features, labels, classifier = "NB", models, cv_folds) 
+      features, labels, classifier = "NB", models, cv_folds, negative_ratio = negative_ratio)
     if (verbose) {
       message("training random forest classifiers ...")
     }
     interactions_RF <- predict_ensemble(
-      features, labels, classifier = "RF", models, cv_folds, trees) 
+      features, labels, classifier = "RF", models, cv_folds, trees, negative_ratio = negative_ratio)
     if (verbose) {
       message("training support vector machine classifiers ...")
     }
     interactions_SVM <- predict_ensemble(
-      features, labels, classifier = "SVM", models, cv_folds)
+      features, labels, classifier = "SVM", models, cv_folds, negative_ratio = negative_ratio)
     if (verbose) {
       message("training logistic regression classifiers ...")
     }
     interactions_LR <- predict_ensemble(
-      features, labels, classifier = "LR", models, cv_folds)
+      features, labels, classifier = "LR", models, cv_folds, negative_ratio = negative_ratio)
     if (verbose) {
       message("ensembling predictions ...")
     }
@@ -114,15 +117,15 @@ predict_interactions <- function(
       select(-starts_with("label")) %>%
       mutate_if(is.numeric, ~ rank(-.)) %>%
       group_by(protein_A, protein_B) %>%
-      mutate(mean = mean(c(score.x.x, score.y.y, score.x, score.y), 
+      mutate(mean = mean(c(score.x.x, score.y.y, score.x, score.y),
                          na.rm = TRUE)) %>%
       ungroup() %>%
       arrange(mean)
     interactions$label <- make_labels(gold_standard, interactions)
   }
-  
+
   # calculate precision
   interactions$precision <- calculate_precision(interactions$label)
-  
+
   return(interactions)
 }
