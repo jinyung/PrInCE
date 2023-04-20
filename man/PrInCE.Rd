@@ -10,8 +10,8 @@ PrInCE(
   gaussians = NULL,
   precision = NULL,
   verbose = FALSE,
-  min_points = 1,
-  min_consecutive = 5,
+  min_points = 5,
+  min_consecutive = 1,
   min_pairs = 3,
   impute_NA = TRUE,
   smooth = TRUE,
@@ -31,7 +31,8 @@ PrInCE(
   classifier = c("NB", "SVM", "RF", "LR", "ensemble"),
   models = 1,
   cv_folds = 10,
-  trees = 500
+  trees = 500,
+  negative_ratio = NA
 )
 }
 \arguments{
@@ -135,6 +136,9 @@ with a different k-fold cross-validation split}
 \item{cv_folds}{the number of folds to use for k-fold cross-validation}
 
 \item{trees}{for random forests only, the number of trees in the forest}
+
+\item{negative_ratio}{let the ratio of positive:negative labels be 1:n.
+This changes n. default is NA, which do not change the ratio of negatives.}
 }
 \value{
 a ranked data frame of interacting proteins, with the precision

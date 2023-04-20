@@ -143,7 +143,8 @@
 #'   with a different k-fold cross-validation split
 #' @param cv_folds the number of folds to use for k-fold cross-validation
 #' @param trees for random forests only, the number of trees in the forest
-#'
+#' @param negative_ratio let the ratio of positive:negative labels be 1:n.
+#'   This changes n. default is NA, which do not change the ratio of negatives.
 #' @return a ranked data frame of interacting proteins, with the precision
 #'   at each point in the list
 #'
@@ -200,7 +201,8 @@ PrInCE <- function(profiles, gold_standard,
                    classifier = c("NB", "SVM", "RF", "LR", "ensemble"),
                    models = 1,
                    cv_folds = 10,
-                   trees = 500) {
+                   trees = 500,
+                   negative_ratio = NA) {
   method <- match.arg(method)
   criterion <- match.arg(criterion)
   classifier <- match.arg(classifier)
@@ -329,7 +331,8 @@ PrInCE <- function(profiles, gold_standard,
     models = models,
     cv_folds = cv_folds,
     trees = trees,
-    verbose = verbose
+    verbose = verbose,
+    negative_ratio = negative_ratio
   )
 
   # optionally threshold based on precison
